@@ -1,0 +1,7 @@
+
+export const loginData = {
+  validUser: {
+    username: 'standard_user',
+    password: 'secret_sauce',
+  },
+};

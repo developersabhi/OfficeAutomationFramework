@@ -1,3 +1,4 @@
+import { envConfig } from './config/envConfig';
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
@@ -22,7 +23,9 @@ export default defineConfig({
   // Shared settings for all tests
   use: {
     // Base URL for the application
-    baseURL: 'https://www.saucedemo.com/',
+    // baseURL: 'https://www.saucedemo.com/',
+
+    baseURL: envConfig.baseURL,
 
     // Collect trace when retrying failed tests
     trace: 'on-first-retry',

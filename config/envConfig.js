@@ -22,3 +22,6 @@ if(!enviroments[environmentName]) {
 }
 
 export const envConfig = enviroments[environmentName];
+
+// environmentName change krne k liye qa, dev,prod
+// $env:TEST_ENV="qa" 

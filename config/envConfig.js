@@ -25,3 +25,4 @@ export const envConfig = enviroments[environmentName];
 
 // environmentName change krne k liye qa, dev,prod
 // $env:TEST_ENV="qa" 
+// node --input-type=module -e "import { envConfig } from './config/envConfig.js'; console.log(envConfig)"

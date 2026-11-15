@@ -1,0 +1,450 @@
+Bilkul! 😊 Ab tak humne tumhara Playwright Office Automation Framework zero se build kiya hai. Main tumhare liye complete revision notes bana raha hoon, jise tum future mein bhi refer kar sakte ho.
+Playwright Office Automation Framework – Notes
+Project Progress
+7 tests passed
+UI: 3 tests · API: 4 tests · Latest separate verification runs
+
+Framework language
+JavaScript
+
+Automation tool
+Playwright
+
+Version control
+Git & GitHub
+
+Node.js
+v24.11.1
+
+
+1. Project setup
+Sabse pehle humne Playwright project create kiya.
+
+Command:
+npm init playwright@latest
+
+
+Isse project mein Playwright install hua aur initial files create hui.
+
+Important commands:
+npm install
+npx playwright test
+npx playwright show-report
+
+
+- npm install – dependencies install karta hai.
+- npx playwright test – tests run karta hai.
+- npx playwright show-report – HTML report open karta hai.
+2. Project folder structure
+Humne framework ko modular structure mein organize kiya.
+OfficeAutomationFramework/
+│
+├── .github/
+│   └── workflows/
+│       └── playwright.yml
+│
+├── api/
+│   └── ApiClient.js
+│
+├── config/
+│   ├── apiConfig.js
+│   └── envConfig.js
+│
+├── fixtures/
+│   └── testFixtures.js
+│
+├── pages/
+│   └── LoginPage.js
+│
+├── test-data/
+│   └── loginData.js
+│
+├── tests/
+│   ├── ui/
+│   │   └── login.spec.js
+│   │
+│   └── api/
+│       ├── apiHealth.spec.js
+│       ├── createPost.spec.js
+│       ├── updatePost.spec.js
+│       └── deletePost.spec.js
+│
+├── utils/
+│
+├── playwright.config.js
+├── package.json
+└── .gitignore
+
+
+Folder ka purpose:
+Folder	Purpose
+api	Reusable API client
+config	Environment aur API configuration
+fixtures	Reusable test setup
+pages	Page Object Model classes
+test-data	Test data
+tests/ui	UI automation tests
+tests/api	API automation tests
+utils	Common helper functions
+
+3. Playwright configuration
+File: playwright.config.js
+
+Humne configuration mein ye features set kiye:
+- Test directory: ./tests
+- Fully parallel execution
+- CI ke liye retries
+- HTML reporter
+- Trace on first retry
+- Three browser projects
+
+import { defineConfig, devices } from '@playwright/test';
+import { envConfig } from './config/envConfig.js';
+
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+
+  use: {
+    baseURL: envConfig.baseURL,
+    trace: 'on-first-retry',
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+  ],
+});
+
+
+
+Important concepts:
+- baseURL – application ka base URL.
+- fullyParallel – tests parallel execute kar sakta hai.
+- retries – failed tests ko dobara run karta hai.
+- reporter – test results ka report generate karta hai.
+- projects – multiple browsers configure karta hai.
+4. Page Object Model (POM)
+Humne SauceDemo login page ke liye LoginPage.js banayi.
+
+File: pages/LoginPage.js
+
+export class LoginPage {
+  constructor(page) {
+    this.page = page;
+
+    this.usernameInput = page.locator('[data-test="username"]');
+    this.passwordInput = page.locator('[data-test="password"]');
+    this.loginButton = page.locator('[data-test="login-button"]');
+    this.errorMessage = page.locator('[data-test="error"]');
+  }
+
+  async open() {
+    await this.page.goto('/');
+  }
+
+  async login(username, password) {
+    await this.usernameInput.fill(username);
+    await this.passwordInput.fill(password);
+    await this.loginButton.click();
+  }
+}
+
+
+
+POM kya hai?
+
+Page Object Model ek design pattern hai jisme page ke locators aur actions ko alag class mein rakhte hain.
+
+Benefits:
+- Code reusability
+- Easy maintenance
+- Less duplication
+- Clean test files
+5. Test Data Management
+File: test-data/loginData.js
+export const loginData = {
+  validUser: {
+    username: 'standard_user',
+    password: 'secret_sauce',
+  },
+};
+
+
+Iska purpose test data ko test cases se alag rakhna hai.
+
+Agar username ya password change karna ho toh test file edit karne ki zaroorat nahi.
+6. Custom Fixtures
+File: fixtures/testFixtures.js
+import { test as base } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage.js';
+
+export const test = base.extend({
+  loginPage: async ({ page }, use) => {
+    const loginPage = new LoginPage(page);
+
+    await loginPage.open();
+
+    await use(loginPage);
+  },
+});
+
+export { expect } from '@playwright/test';
+
+
+Fixture kya hota hai?
+
+Fixture reusable setup provide karta hai.
+
+Hamare case mein:
+1. Browser page milta hai.
+2. LoginPage object create hota hai.
+3. Login page automatically open hota hai.
+4. Test ko loginPage fixture milta hai.
+Isse har test mein baar-baar login page open karne ka code nahi likhna padta.
+7. UI Automation Testing
+File: tests/ui/login.spec.js
+
+Humne 3 test cases create kiye:
+Test case	Expected result
+Login page open	Username, password aur login button visible
+Valid login	Inventory page open
+Invalid password	Error message visible
+
+Important Playwright assertions:
+await expect(locator).toBeVisible();
+
+await expect(page).toHaveURL(/inventory.html/);
+
+await expect(locator).toContainText('Username and password do not match');
+
+
+UI test command:
+npx playwright test tests/ui/login.spec.js --project=chromium
+
+
+3 UI tests passed
+8. API Automation Framework
+Humne API testing ke liye JSONPlaceholder demo API use ki.
+
+Base URL:
+https://jsonplaceholder.typicode.com
+
+
+ApiClient.js
+File: api/ApiClient.js
+
+Is class mein reusable HTTP methods banaye:
+Method	Purpose
+get()	Data retrieve
+post()	New data create
+put()	Existing data update
+delete()	Data delete
+
+Code:
+
+export class ApiClient {
+  constructor(request, baseURL) {
+    this.request = request;
+    this.baseURL = baseURL;
+  }
+
+  async get(endpoint) {
+    return await this.request.get(
+      `${this.baseURL}${endpoint}`
+    );
+  }
+
+  async post(endpoint, data) {
+    return await this.request.post(
+      `${this.baseURL}${endpoint}`,
+      { data }
+    );
+  }
+
+  async put(endpoint, data) {
+    return await this.request.put(
+      `${this.baseURL}${endpoint}`,
+      { data }
+    );
+  }
+
+  async delete(endpoint) {
+    return await this.request.delete(
+      `${this.baseURL}${endpoint}`
+    );
+  }
+}
+
+
+
+Important: ApiClient ko api/ folder mein rakha hai, utils/ mein nahi, kyunki ye specifically API operations handle karta hai.
+9. API Configuration
+File: config/apiConfig.js
+import { envConfig } from './envConfig.js';
+
+export const apiConfig = {
+  baseURL: envConfig.apiBaseURL,
+
+  endpoints: {
+    posts: '/posts',
+    singlePost: '/posts/1',
+  },
+};
+
+
+Yahan humne API URL ko central configuration se connect kiya.
+
+Iska benefit: API URL change karne ke liye har test file mein changes nahi karne padte.
+10. API Test Cases
+Humne 4 API tests banaye:
+File	Operation	Expected status
+apiHealth.spec.js	GET	200
+createPost.spec.js	POST	201
+updatePost.spec.js	PUT	200
+deletePost.spec.js	DELETE	200
+
+API test run command:
+npx playwright test tests/api --project=chromium
+
+
+4 API tests passed
+Note: JSONPlaceholder demo API hai. POST aur PUT operations ka response milta hai, lekin data permanently persist nahi hota.
+11. Environment Configuration
+File: config/envConfig.js
+
+Humne 3 environments configure kiye:
+- Dev
+- QA
+- Prod
+Basic structure:
+const environments = {
+  dev: {
+    baseURL: 'https://www.saucedemo.com/',
+    apiBaseURL: 'https://jsonplaceholder.typicode.com',
+  },
+
+  qa: {
+    baseURL: 'https://www.saucedemo.com/',
+    apiBaseURL: 'https://jsonplaceholder.typicode.com',
+  },
+
+  prod: {
+    baseURL: 'https://www.saucedemo.com/',
+    apiBaseURL: 'https://jsonplaceholder.typicode.com',
+  },
+};
+
+const environmentName = process.env.TEST_ENV || 'qa';
+
+if (!environments[environmentName]) {
+  throw new Error(
+    `Invalid TEST_ENV: ${environmentName}. Use dev, qa, or prod.`
+  );
+}
+
+export const envConfig = environments[environmentName];
+
+
+Environment kaise select karte hain?
+
+PowerShell:
+$env:TEST_ENV="dev"
+
+
+$env:TEST_ENV="qa"
+
+
+$env:TEST_ENV="prod"
+
+
+Environment configuration check karne ke liye:
+node --input-type=module -e "import { envConfig } from './config/envConfig.js'; console.log(envConfig)"
+
+
+Humne teeno environments par configuration load karke verify ki.
+
+Important: Abhi teeno URLs same hain. Real office project mein alag Dev, QA aur Production URLs configure karenge.
+12. Git and GitHub
+Humne project ke andar independent Git repository initialize ki.
+
+Important commands:
+Command	Purpose
+git init	Git repository create
+git status	Changes check
+git add .	Changes stage
+git commit -m "message"	Local history mein save
+git push	GitHub par upload
+git pull	Remote changes download
+git remote -v	Remote URL check
+git log --oneline	Commit history check
+
+GitHub repository:
+OfficeAutomationFramework – GitHubHumne .gitignore mein ye folders exclude kiye:
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+
+
+Git Commit aur Git Tag ka difference:
+- Commit: Changes ka snapshot save karta hai.
+- Tag: Important version ko naam deta hai, jaise v1.0.0.
+LF/CRLF warning bhi dekhi thi. Woh Windows aur Unix line endings ka difference hai, koi fatal error nahi.
+
+13. Ab tak kya-kya practically complete hua?
+Learning checklist
+Progress
+
+14/14
+
+
+
+[x] Playwright project setup
+[x] Folder structure creation
+[x] Playwright configuration
+[x] Page Object Model
+[x] Test data management
+[x] Custom fixtures
+[x] UI login testing – 3 tests
+[x] Reusable API client
+[x] GET, POST, PUT, DELETE testing
+[x] API configuration
+[x] Environment configuration
+[x] Dev, QA, Prod selection verification
+[x] Git repository setup
+[x] GitHub push and commits
+
+14. Aage kya seekhenge?
+Meri recommended learning roadmap:
+Step	Topic	Status
+1	Environment selection ko better verify karna	Next
+2	API fixtures	Pending
+3	Reusable test utilities	Pending
+4	Authentication handling	Pending
+5	Advanced UI scenarios	Pending
+6	API schema validation	Pending
+7	Allure reporting	Pending
+8	GitHub Actions CI/CD	Pending
+9	Environment variables and secrets	Pending
+10	Framework documentation	Pending
+
+Meri advice: In notes ko apne project ke README.md mein bhi save karna. Isse tumhara GitHub repository kisi interviewer ya team member ko framework samajhne mein help karega.
+
+Ab hum isi roadmap ke according ek-ek step karenge. Har step mein pehle concept, phir code, phir test execution aur finally Git commit. 🚀

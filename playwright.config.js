@@ -1,4 +1,4 @@
-import { envConfig } from './config/envConfig';
+import { envConfig } from './config/envConfig.js';
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
@@ -18,7 +18,17 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   // HTML test report
-  reporter: 'html',
+  // reporter: 'html',
+
+  reporter: [
+    [
+      'html',
+      {
+        outputFolder: `playwright-report/${envConfig.name}`,
+        open: 'never',
+      },
+    ],
+  ],
 
   // Shared settings for all tests
   use: {

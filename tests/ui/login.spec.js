@@ -19,6 +19,7 @@ test('Standard user should login successfully', async({loginPage, page})=>{
 
     Logger.info('Verifying successful login');
     await expect(page).toHaveURL(/inventory.html/);
+    // await expect(page).toHaveURL(/inventory123.html/);
     await expect(page.locator('.inventory_list')).toBeVisible();
     Logger.info('Login test completed successfully');
 })
